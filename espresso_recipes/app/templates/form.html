@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}{{ r.name or "New recipe" }}{% endblock %}
+
+{% macro equipment_select(kind, label, required=false) %}
+<label>{{ label }}
+  <select name="{{ kind }}_id" data-reveal="{{ kind }}_new">
+    {% if not required %}<option value="">–</option>{% endif %}
+    {% for e in options[kind] %}
+    <option value="{{ e.id }}" {{ "selected" if e.id == r[kind ~ "_id"] }}>{{ e.name }}</option>
+    {% endfor %}
+    <option value="new">Add new…</option>
+  </select>
+  <input type="text" name="{{ kind }}_new" id="{{ kind }}_new" placeholder="New {{ label|lower }}" aria-label="New {{ label|lower }}" hidden>
+</label>
+{% endmacro %}
+
+{% block content %}
+{% set action = base ~ "/recipes" ~ ("/" ~ r.id if r.id else "") %}
+<form method="post" action="{{ action }}" class="recipe">
+  {% for error in errors %}<p class="error">{{ error }}</p>{% endfor %}
+  {% if r.archived %}<p class="muted">This recipe is archived.</p>{% endif %}
+
+  <label>Coffee
+    <input type="text" name="name" value="{{ r.name or "" }}" required autocomplete="off" {{ "autofocus" if not r.id }}>
+  </label>
+
+  <div class="row">
+    {{ equipment_select("method", "Method", required=true) }}
+    <label>Grind
+      <input type="text" name="grind_setting" value="{{ r.grind_setting or "" }}" inputmode="decimal" autocomplete="off">
+    </label>
+  </div>
+
+  <div class="row">
+    <label>Dose in (g)
+      <input type="text" name="dose_g" value="{{ r.dose_g|num }}" inputmode="decimal" autocomplete="off">
+    </label>
+    <label>Yield out (g)
+      <input type="text" name="yield_g" value="{{ r.yield_g|num }}" inputmode="decimal" autocomplete="off">
+    </label>
+    <label>Temp (°C)
+      <input type="text" name="temperature_c" value="{{ r.temperature_c|num }}" inputmode="decimal" autocomplete="off">
+    </label>
+  </div>
+
+  <label>Profile
+    <select name="profile_id" id="profile" data-reveal="profile_text">
+      <option value="">–</option>
+      {% for p in profiles %}
+      <option value="{{ p.id }}" {{ "selected" if p.id == r.profile_id }}>{{ p.name }}</option>
+      {% endfor %}
+      <option value="other" {{ "selected" if r.profile_text }}>Other…</option>
+    </select>
+    <input type="text" name="profile_text" id="profile_text" value="{{ r.profile_text or "" }}" placeholder="Profile name" aria-label="Profile name" hidden>
+  </label>
+  <p class="hint">
+    <button type="button" class="link" id="refresh-profiles">Refresh from machine</button>
+    <span id="profile-status" role="status"></span>
+  </p>
+
+  <div class="row">
+    {{ equipment_select("basket", "Basket") }}
+    {{ equipment_select("grinder", "Grinder") }}
+  </div>
+
+  <label>Notes
+    <textarea name="notes" rows="3">{{ r.notes or "" }}</textarea>
+  </label>
+
+  {% if r.id %}
+  <label>What changed? <span class="muted">(optional)</span>
+    <input type="text" name="change_note" placeholder="e.g. too sour, went finer" autocomplete="off">
+  </label>
+  {% endif %}
+
+  <div class="actions">
+    <button type="submit" class="button primary">Save</button>
+    {% if r.id %}
+    <button type="submit" class="button" formaction="{{ action }}/duplicate" formnovalidate>Duplicate</button>
+    <button type="submit" class="button" formaction="{{ action }}/archive" formnovalidate>{{ "Unarchive" if r.archived else "Archive" }}</button>
+    {% if r.archived %}
+    <button type="submit" class="button danger" formaction="{{ action }}/delete" formnovalidate data-confirm="Delete this recipe and its history?">Delete</button>
+    {% endif %}
+    {% endif %}
+  </div>
+</form>
+
+{% if history %}
+<section class="history">
+  <h2>History</h2>
+  <ol>
+    {% for v in history %}
+    <li>
+      <div class="history-head">
+        <time datetime="{{ v.saved_at }}">{{ v.saved_at[:10] }}</time>
+        {% if v.is_current %}
+        <span class="muted">current</span>
+        {% else %}
+        <form method="post" action="{{ action }}/versions/{{ v.id }}/restore">
+          <button type="submit" class="link">Restore</button>
+        </form>
+        {% endif %}
+      </div>
+      {% if v.change_note %}<p class="note">{{ v.change_note }}</p>{% endif %}
+      <ul class="changes">
+        {% for c in v.changes %}
+        <li>
+          <span class="muted">{{ c.label }}</span>
+          {% if not v.is_initial %}{{ c.old }} →{% endif %} {{ c.new }}
+        </li>
+        {% endfor %}
+      </ul>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+{% endblock %}

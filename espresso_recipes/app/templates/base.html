@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Recipes{% endblock %}</title>
+  <link rel="stylesheet" href="{{ base }}/static/app.css">
+</head>
+<body data-base="{{ base }}">
+  <header class="top">
+    <a class="brand" href="{{ base }}/">Recipes</a>
+    <nav>
+      <a href="{{ base }}/equipment">Equipment</a>
+      <a class="button primary" href="{{ base }}/recipes/new">New recipe</a>
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <script src="{{ base }}/static/app.js" defer></script>
+</body>
+</html>

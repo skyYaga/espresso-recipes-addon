@@ -1,0 +1,16 @@
+name: Espresso Recipes
+version: "0.1.0"
+slug: espresso_recipes
+description: Coffee recipes with history and a Gaggiuino profile picker
+arch:
+  - aarch64
+  - amd64
+init: false
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:coffee
+panel_title: Recipes
+options:
+  gaggiuino_url: http://gaggiuino.local
+schema:
+  gaggiuino_url: url
