@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Equipment{% endblock %}
+{% block content %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+{% for kind, title, entries in groups %}
+<section class="group">
+  <h2>{{ title }}</h2>
+  {% for e in entries %}
+  <form method="post" action="{{ base }}/equipment/{{ e.id }}" class="inline {{ "archived" if e.archived }}">
+    <input type="text" name="name" value="{{ e.name }}" required aria-label="Name" autocomplete="off">
+    <button type="submit" class="button">Rename</button>
+    <button type="submit" class="button" formaction="{{ base }}/equipment/{{ e.id }}/archive" formnovalidate>{{ "Unarchive" if e.archived else "Archive" }}</button>
+  </form>
+  {% endfor %}
+  <form method="post" action="{{ base }}/equipment" class="inline">
+    <input type="hidden" name="kind" value="{{ kind }}">
+    <input type="text" name="name" placeholder="Add new" required aria-label="Add to {{ title|lower }}" autocomplete="off">
+    <button type="submit" class="button primary">Add</button>
+  </form>
+</section>
+{% endfor %}
+<p class="muted">Archived entries are hidden from the recipe form but stay on recipes that use them.</p>
+<p><a href="{{ base }}/export.json">Export all data as JSON</a></p>
+{% endblock %}

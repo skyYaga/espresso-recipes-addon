@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="toolbar">
+  <input type="search" id="search" placeholder="Search" aria-label="Search recipes" autocomplete="off">
+  {% if archived %}
+  <a href="{{ base }}/">Active</a>
+  {% else %}
+  <a href="{{ base }}/?archived=true">Archived</a>
+  {% endif %}
+</div>
+
+{% if archived %}<p class="muted">Archived recipes</p>{% endif %}
+
+{% for method, recipes in groups %}
+<section class="group">
+  <h2>{{ method }}</h2>
+  {% for r in recipes %}
+  <a class="card" href="{{ base }}/recipes/{{ r.id }}">
+    <h3>{{ r.name }}</h3>
+    {% if r.dose_g is not none or r.yield_g is not none %}
+    <p class="shot">
+      {{ r.dose_g|num or "–" }} g in → {{ r.yield_g|num or "–" }} g out
+      {% if r.dose_g and r.yield_g %}<span class="muted">1:{{ "%.1f"|format(r.yield_g / r.dose_g) }}</span>{% endif %}
+    </p>
+    {% endif %}
+    <dl class="facts">
+      {% if r.grind_setting %}<div><dt>Grind</dt><dd>{{ r.grind_setting }}</dd></div>{% endif %}
+      {% if r.profile %}<div><dt>Profile</dt><dd>{{ r.profile }}</dd></div>{% endif %}
+      {% if r.temperature_c is not none %}<div><dt>Temp</dt><dd>{{ r.temperature_c|num }} °C</dd></div>{% endif %}
+      {% if r.basket %}<div><dt>Basket</dt><dd>{{ r.basket }}</dd></div>{% endif %}
+      {% if r.grinder %}<div><dt>Grinder</dt><dd>{{ r.grinder }}</dd></div>{% endif %}
+    </dl>
+  </a>
+  {% endfor %}
+</section>
+{% else %}
+<p class="muted">{{ "No archived recipes." if archived else "No recipes yet." }}</p>
+{% endfor %}
+<p class="muted" id="no-match" hidden>No recipes match.</p>
+{% endblock %}

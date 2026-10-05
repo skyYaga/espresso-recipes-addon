@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            requirements-dev.txt
+            espresso_recipes/requirements.txt
+      - run: pip install -r requirements-dev.txt
+      - run: pytest
+
+  build:
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build add-on image
+        run: |
+          build_from=$(yq '.build_from.${{ matrix.arch }}' espresso_recipes/build.yaml)
+          docker build --build-arg BUILD_FROM="$build_from" -t espresso-recipes espresso_recipes
+      - name: Check that the app starts
+        run: |
+          docker run -d --name app -p 8099:8099 --entrypoint /run.sh espresso-recipes
+          for i in $(seq 1 20); do
+            # Outside Home Assistant the ingress guard answers 403, which still proves the app is up.
+            status=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8099/ || true)
+            [ "$status" = "403" ] && exit 0
+            sleep 1
+          done
+          docker logs app
+          exit 1
